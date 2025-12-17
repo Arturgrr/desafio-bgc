@@ -1,9 +1,9 @@
-import { Product } from "@/models/productModel"
-import { ProductRepository } from "@/repositories/productRepository"
 import type { Page } from "puppeteer"
 import puppeteer from "puppeteer-extra"
 import StealthPlugin from "puppeteer-extra-plugin-stealth"
-import type { CatalogScraperProvider } from "../../providers/catalogScraperProvider"
+import { Product } from "../../models/productModel.ts"
+import type { CatalogScraperProvider } from "../../providers/catalogScraperProvider.ts"
+import type { ProductRepository } from "../../repositories/productRepository.ts"
 
 puppeteer.use(StealthPlugin())
 
@@ -12,10 +12,29 @@ type Category = {
   url: string
 }
 
+async function isThrottled(page: Page): Promise<boolean> {
+  return page.evaluate(() => {
+    return (
+      document.title.includes("Sorry") ||
+      document.querySelector("pre")?.textContent?.trim() ===
+        "Request was throttled. Please wait a moment and refresh the page"
+    )
+  })
+}
+
 const delay = () =>
   new Promise((resolve) =>
     setTimeout(resolve, Math.floor(Math.random() * (2_000 - 1_000 + 1) + 1_000)),
   )
+
+type RawScraped = {
+  name: string
+  price: number
+  image: string
+  url: string
+  category: string
+  rank: number
+}
 
 async function scrapeTopProducts(page: Page, category: Category): Promise<Product[]> {
   await delay()
@@ -27,7 +46,7 @@ async function scrapeTopProducts(page: Page, category: Category): Promise<Produc
     return []
   }
 
-  const products = await page.evaluate((categoryName) => {
+  const rawProducts = (await page.evaluate((categoryName: string) => {
     const cards = Array.from(
       document.querySelectorAll<HTMLElement>("[data-asin]:not([data-asin=''])"),
     ).slice(0, 3)
@@ -47,17 +66,30 @@ async function scrapeTopProducts(page: Page, category: Category): Promise<Produc
       const href = card.querySelector<HTMLAnchorElement>("a.a-link-normal")?.getAttribute("href") ?? ""
       const productUrl = href ? new URL(href, location.href).href : ""
 
-      return new Product({
+      return {
         name: title,
         price: Number(price.replace(/[^\d,.-]/g, "").replace(".", "").replace(",", ".")),
         image: imageUrl,
         url: productUrl,
         category: categoryName,
         rank: index + 1,
-      })
+      }
     })
-  }, category.name)
-  return products
+  }, category.name)) as RawScraped[]
+
+  const safeProducts = Array.isArray(rawProducts) ? rawProducts : []
+
+  return safeProducts.map(
+    (item) =>
+      new Product({
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        url: item.url,
+        category: item.category,
+        rank: item.rank,
+      }),
+  )
 }
 
 export class AmazonBestSellersScraper implements CatalogScraperProvider {
@@ -93,15 +125,7 @@ export class AmazonBestSellersScraper implements CatalogScraperProvider {
       return
     }
 
-    const throttled = await page.evaluate(() => {
-      return (
-        document.title.includes("Sorry") ||
-        document.querySelector("pre")?.textContent?.trim() ===
-          "Request was throttled. Please wait a moment and refresh the page"
-      )
-    })
-
-    if (throttled) {
+    if (await isThrottled(page)) {
       console.error("BLOQUEADO: Amazon detectou bot. Tente trocar de IP ou aguardar.")
       await browser.close()
       return
@@ -135,10 +159,14 @@ export class AmazonBestSellersScraper implements CatalogScraperProvider {
 
     console.log(`categorias encontradas: ${categories.length}`)
 
-    const products: Product[] = []
-
     for (const [index, category] of categories.entries()) {
       await page.goto(category.url, { waitUntil: "domcontentloaded" })
+
+      if (await isThrottled(page)) {
+        console.error(`BLOQUEADO na categoria ${category.name}. Aguardando antes de seguir.`)
+        await delay()
+        continue
+      }
 
       await page.evaluate(async () => {
         await new Promise<void>((resolve) => {
@@ -157,25 +185,23 @@ export class AmazonBestSellersScraper implements CatalogScraperProvider {
       })
 
       try {
-        await page.waitForSelector("[data-asin]", { timeout: 20_000 })
+        await page.waitForSelector("[data-asin]", { timeout: 30_000 })
         await page.waitForFunction(
           () =>
             document.querySelector("._cDEzb_p13n-sc-price_3mJ9Z") ||
             document.querySelector(".a-price .a-offscreen"),
-          { timeout: 10_000 },
+          { timeout: 15_000 },
         )
 
         const topProducts = await scrapeTopProducts(page, category)
-        products.push(...topProducts)
+        await productsRepository.saveMany(topProducts)
       } catch (_error) {
-        // Ignora categoria em caso de timeout ou falha
+        console.error(`erro ao coletar produtos em ${category.name}`, _error)
       }
 
       console.log(`categoria ${category.name} finalizada ${index + 1}/${categories.length}`)
       await delay()
     }
-
-    await productsRepository.saveMany(products)
 
     await browser.close()
 

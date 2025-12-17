@@ -1,5 +1,5 @@
-import { env } from "@/infra/env/index"
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
+import { env } from "../env/index.ts"
 
 export const dynamoClient = new DynamoDBClient({
   region: env.AWS_REGION,

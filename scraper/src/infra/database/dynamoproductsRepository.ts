@@ -1,10 +1,14 @@
-import { Product } from "@/models/productModel"
-import { ProductRepository } from "@/repositories/productRepository"
 import { BatchWriteItemCommand, DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb"
-import { env } from "../env"
+import { Product } from "../../models/productModel.ts"
+import type { ProductRepository } from "../../repositories/productRepository.ts"
+import { env } from "../env/index.ts"
 
 export class DynamoProductsRepository implements ProductRepository {
-    constructor(private readonly dynamoClient: DynamoDBClient) {}
+    private readonly dynamoClient: DynamoDBClient;
+
+    constructor(dynamoClient: DynamoDBClient) {
+        this.dynamoClient = dynamoClient;
+    }
 
     async save(product: Product): Promise<void> {
         await this.dynamoClient.send(new PutItemCommand({
