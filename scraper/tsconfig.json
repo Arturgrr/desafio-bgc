@@ -8,7 +8,9 @@
       "ESNext.Array",
       "ESNext.Collection",
       "ESNext.Iterator",
-      "ESNext.Promise"
+      "ESNext.Promise",
+      "dom",
+      "DOM.Iterable"
     ],
     "module": "esnext",
     "target": "es2024",

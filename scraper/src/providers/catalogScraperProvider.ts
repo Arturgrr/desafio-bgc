@@ -1,13 +1,6 @@
-export type ScrapedProduct = {
-  name: string
-  price: string
-  imageUrl: string
-  productUrl: string
-  category: string
-  rank: number
-}
+import { ProductRepository } from "@/repositories/productRepository"
 
 export interface CatalogScraperProvider {
-  scrape(): Promise<ScrapedProduct[]>
+  scrape(productsRepository: ProductRepository): Promise<void>
 }
 
