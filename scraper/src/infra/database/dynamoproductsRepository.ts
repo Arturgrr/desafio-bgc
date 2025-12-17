@@ -16,6 +16,7 @@ export class DynamoProductsRepository implements ProductRepository {
                 image: { S: product.props.image },
                 url: { S: product.props.url },
                 category: { S: product.props.category },
+                rank: { N: product.props.rank.toString() },
                 createdAt: { S: product.createdAt.toISOString() },
             },
         }));

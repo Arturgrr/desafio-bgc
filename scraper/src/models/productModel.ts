@@ -4,6 +4,7 @@ export interface ProductProps {
     image: string;
     url: string;
     category: string;
+    rank: number;
 }
 
 export class Product {
