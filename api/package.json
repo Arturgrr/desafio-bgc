@@ -1,0 +1,19 @@
+{
+  "name": "api-desafio-bgcbrasil",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "sls:offline": "serverless offline start --stage local",
+    "dynamodb:install": "serverless dynamodb install"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.585.0",
+    "@aws-sdk/lib-dynamodb": "^3.585.0",
+    "serverless-http": "^3.2.0"
+  },
+  "devDependencies": {
+    "serverless": "^3.38.0",
+    "serverless-dynamodb": "^0.2.56",
+    "serverless-offline": "^13.3.2"
+  }
+}
