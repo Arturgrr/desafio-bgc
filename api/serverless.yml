@@ -9,6 +9,7 @@ provider:
   stage: ${opt:stage, "local"}
   environment:
     PRODUCTS_TABLE: ${self:custom.tableName}
+    IS_OFFLINE: ${opt:offline, 'false'}
   iam:
     role:
       statements:
@@ -26,6 +27,14 @@ provider:
                 - Arn
 
 custom:
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    exclude: ['@aws-sdk/client-dynamodb', '@aws-sdk/lib-dynamodb'] # Opcional: o SDK v3 já vem no runtime do Lambda
+    target: node20
+    platform: node
+    concurrency: 10
   tableName: products-table-${sls:stage}
   serverless-offline:
     httpPort: 3000
@@ -38,16 +47,17 @@ custom:
       migrate: true
 
 plugins:
+  - serverless-esbuild
   - serverless-offline
   - serverless-dynamodb
 
-functions:
-  hello:
-    handler: handler.hello
-    events:
-      - httpApi:
-          path: /
-          method: get
+# functions:
+#   hello:
+#     handler: handler.hello
+#     events:
+#       - httpApi:
+#           path: /
+#           method: get
 
 resources:
   Resources:
