@@ -1,4 +1,4 @@
-# Amazon BestSellers - Scraper & API 🚀
+# Desafio de código BGC Brasil
 
 Este repositório contém o desafio técnico para a **BGC Brasil**. O objetivo é realizar o web scraping dos produtos mais vendidos da Amazon, persistir os dados em um banco NoSQL (DynamoDB) e disponibilizar uma API Serverless para consulta.
 
