@@ -278,10 +278,10 @@ function validateProducts(products: Product[]): void {
   
   const invalid = products.find(
     (product) =>
-      product.props.name.trim().length === 0 ||
-      product.props.image.trim().length === 0 ||
-      product.props.url.trim().length === 0 ||
-      Number.isNaN(product.props.price)
+      product.name.trim().length === 0 ||
+      product.image.trim().length === 0 ||
+      product.url.trim().length === 0 ||
+      Number.isNaN(product.price)
   )
 
   
