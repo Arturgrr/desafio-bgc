@@ -51,13 +51,13 @@ plugins:
   - serverless-offline
   - serverless-dynamodb
 
-# functions:
-#   hello:
-#     handler: handler.hello
-#     events:
-#       - httpApi:
-#           path: /
-#           method: get
+functions:
+  listProducts:
+    handler: src/infra/handlers/getProducts.handler
+    events:
+      - httpApi:
+          path: /products
+          method: get
 
 resources:
   Resources:
